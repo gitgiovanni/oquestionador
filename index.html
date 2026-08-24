@@ -32,15 +32,17 @@
   #stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;}
   #app{position:relative;width:100vw;height:100vh;z-index:1;}
 
-  /* --- TELA DE LOGIN (NOVO) --- */
+  /* --- TELA DE LOGIN CENTRALIZADA --- */
   #loginScreen {
-    position: absolute;
-    inset: 0;
-    z-index: 50;
+    position: fixed; /* Força a fixação na tela inteira */
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(5, 6, 11, 0.6);
+    background: rgba(5, 6, 11, 0.7);
     backdrop-filter: blur(12px);
     transition: opacity 0.6s ease, visibility 0.6s;
   }
@@ -115,13 +117,13 @@
     filter: brightness(0.9);
   }
 
-  /* --- O RESTO DO CSS ORIGINAL --- */
+  /* --- O RESTO DO CSS --- */
   #topbar{
     position:absolute;top:0;left:0;right:0;
     display:flex;align-items:center;justify-content:space-between;
     padding:22px clamp(16px,4vw,40px);
     z-index:20;pointer-events:none;
-    opacity: 0; /* Começa invisível até o login */
+    opacity: 0;
     transition: opacity 0.8s ease;
   }
   #topbar *{pointer-events:auto;}
@@ -204,7 +206,7 @@
 
 <div id="app">
   
-  <!-- TELA DE LOGIN (NOVA) -->
+  <!-- TELA DE LOGIN CENTRALIZADA -->
   <div id="loginScreen">
     <div class="login-card">
       <div class="icon" style="font-size: 34px; margin-bottom: 15px;">🎓</div>
@@ -237,36 +239,48 @@
 
 <script>
 /* ---------------------------------------------------------
-   DADOS E ESTADO
+   DADOS E ESTADO DA ÁRVORE 
 --------------------------------------------------------- */
 const DATA = [
   { id:'matematica', nome:'Matemática', icone:'🔢', cor:'#f5b95c',
     filhos:[
-      { id:'algebra', nome:'Álgebra', icone:'➗', filhos:[
-        { id:'eq1', nome:'Equações do 1º grau', icone:'📏' },
-        { id:'eq2', nome:'Equações do 2º grau', icone:'📐' },
+      { id:'algebra', nome:'Álgebra', icone:'➗' },
+      { id:'geometria', nome:'Geometria', icone:'📐' },
+      { id:'estatistica', nome:'Estatística', icone:'📊' }
+    ]},
+  { id:'portugues', nome:'Português', icone:'📚', cor:'#b48cf2',
+    filhos:[
+      { id:'gramatica', nome:'Gramática', icone:'✏️' },
+      { id:'literatura', nome:'Literatura', icone:'🎭' },
+      { id:'interpretacao', nome:'Interpretação', icone:'👁️' }
+    ]},
+  { id:'historia', nome:'História', icone:'📜', cor:'#e0785a',
+    filhos:[
+      { id:'hist-brasil', nome:'História do Brasil', icone:'🇧🇷', filhos:[
+        { id:'colonia', nome:'Colônia', icone:'⛵' },
+        { id:'imperio', nome:'Império', icone:'👑' },
+        { id:'republica', nome:'República', icone:'🏛️' }
       ]},
-      { id:'geometria', nome:'Geometria', icone:'📐', filhos:[
-        { id:'area', nome:'Área e Perímetro', icone:'▦' },
-        { id:'pitagoras', nome:'Teorema de Pitágoras', icone:'🔺' },
-      ]},
+      { id:'hist-geral', nome:'História Geral', icone:'🌍' }
+    ]},
+  { id:'geografia', nome:'Geografia', icone:'🗺️', cor:'#3ddc9b',
+    filhos:[
+      { id:'geo-fisica', nome:'Geo. Física', icone:'🌋' },
+      { id:'geopolitica', nome:'Geopolítica', icone:'🏳️' },
+      { id:'cartografia', nome:'Cartografia', icone:'🧭' }
+    ]},
+  { id:'ingles', nome:'Inglês', icone:'🗣️', cor:'#f26fa0',
+    filhos:[
+      { id:'vocab-en', nome:'Vocabulário', icone:'🔤' },
+      { id:'gram-en', nome:'Gramática', icone:'📘' }
     ]},
   { id:'tecnologia', nome:'Tecnologia', icone:'💻', cor:'#8b9cf7',
     filhos:[
-      { id:'etica', nome:'Ética e Tecnologia', icone:'⚖️', filhos:[
-        { id:'privacidade', nome:'Privacidade de Dados', icone:'🔒', filhos:[
-          { id:'lgpd', nome:'LGPD na prática', icone:'📄' },
-          { id:'anonimizacao', nome:'Anonimização', icone:'🫥' },
-        ]},
-        { id:'vieses', nome:'Vieses Algorítmicos', icone:'🎯', filhos:[
-          { id:'fairness', nome:'Fairness em ML', icone:'⚖️' },
-          { id:'discriminacao', nome:'Discriminação', icone:'🚫' },
-        ]},
+      { id:'etica', nome:'Ética e IA', icone:'⚖️', filhos:[
+        { id:'privacidade', nome:'Privacidade', icone:'🔒' },
+        { id:'vieses', nome:'Vieses Algorítmicos', icone:'🎯' },
       ]},
-      { id:'engenharia', nome:'Engenharia de Software', icone:'⚙️', filhos:[
-        { id:'padroes', nome:'Padrões de Projeto', icone:'🧩'},
-        { id:'arquitetura', nome:'Arquitetura de Sistemas', icone:'🏗️' },
-      ]},
+      { id:'programacao', nome:'Lógica de Prog.', icone:'⚙️' },
     ]},
 ];
 
@@ -286,7 +300,7 @@ let animId = null;
 const TOP_MARGIN = 90, BOTTOM_MARGIN = 90, SIDE_MARGIN = 16;
 
 /* ---------------------------------------------------------
-   LÓGICA DE LOGIN (NOVO)
+   LÓGICA DE LOGIN
 --------------------------------------------------------- */
 function efetuarLogin() {
   const email = document.getElementById('emailInput').value;
@@ -297,18 +311,16 @@ function efetuarLogin() {
     return;
   }
 
-  // Faz a tela de login sumir e a topbar aparecer suavemente
   loginScreen.style.opacity = '0';
   loginScreen.style.visibility = 'hidden';
   topbar.style.opacity = '1';
 
-  // Inicia o render das bolhas apenas agora!
   renderTrail();
   renderLevel(currentList);
 }
 
 /* ---------------------------------------------------------
-   RENDER DE UM NÍVEL E TRANSIÇÕES (MANTIDO)
+   RENDER DE UM NÍVEL E TRANSIÇÕES 
 --------------------------------------------------------- */
 function renderLevel(list){
   cancelAnimationFrame(animId);
