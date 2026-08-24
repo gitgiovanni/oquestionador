@@ -607,6 +607,8 @@ function mostrarLeaf(node){
 /* ---------------------------------------------------------
    INTEGRAÇÃO COM O BACK-END (BUSCA DE QUESTÕES E EXIBIÇÃO)
 --------------------------------------------------------- */
+let questaoAtualId = null;
+
 async function iniciarPerguntas(topicoId){
   try {
     const resposta = await fetch(`http://localhost:3000/api/questoes/${topicoId}`);
@@ -624,17 +626,17 @@ async function iniciarPerguntas(topicoId){
     }
 
     const q = questoes[0];
+    questaoAtualId = q.id_questao; // Salva o ID real da questão vinda do MySQL
     
     stage.innerHTML = `
       <div id="leafCard">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
           <span style="font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase;">Trilha: ${topicoId}</span>
-          <!-- O DIFERENCIAL ÉTICO DO TCC -->
           <button class="btn-transparencia" onclick="toggleTransparencia()">👁️ Por que estou vendo esta pergunta?</button>
         </div>
 
         <div id="boxTransparencia" class="transparencia-box hidden">
-          <strong>Algoritmo Transparente:</strong> O sistema selecionou esta questão de nível ${q.nivel_dificuldade} pois sua última avaliação neste tópico indicou necessidade de reforço conceitual.
+          <strong>Algoritmo Transparente:</strong> O sistema selecionou esta questão de nível ${q.nivel_dificuldade} com base no seu histórico de acertos e erros registrados na base de dados.
         </div>
 
         <p style="font-size:15px; font-weight:600; color:#fff; margin: 15px 0 20px;">${q.enunciado}</p>
@@ -658,30 +660,43 @@ async function iniciarPerguntas(topicoId){
   }
 }
 
-function toggleTransparencia() {
-  const box = document.getElementById('boxTransparencia');
-  box.classList.toggle('hidden');
-}
-
-function validarResposta(correta, escolhida, elemento) {
-  // Desativa todos os botões após responder
+async function validarResposta(correta, escolhida, elemento) {
   const botoes = document.querySelectorAll('.quiz-alternativa');
   botoes.forEach(b => b.style.pointerEvents = 'none');
+
+  const acertou = (escolhida === correta);
+  const idUsuario = localStorage.getItem('id_usuario');
+
+  // Envia o registro do erro/acerto para o back-end salvar no MySQL
+  try {
+    await fetch('http://localhost:3000/api/responder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id_usuario: idUsuario,
+        id_questao: questaoAtualId,
+        acertou: acertou
+      })
+    });
+  } catch (e) {
+    console.error("Erro ao registrar histórico no banco:", e);
+  }
 
   const feedback = document.getElementById('feedbackQuiz');
   const texto = document.getElementById('textoFeedback');
   
   feedback.style.display = 'block';
-  if(escolhida === correta) {
+  if(acertou) {
     elemento.style.background = 'rgba(16, 185, 129, 0.35)';
     elemento.style.borderColor = '#10b981';
-    texto.innerHTML = '✅ Resposta Correta!';
+    texto.innerHTML = '✅ Resposta Correta! Registrado no seu histórico.';
   } else {
     elemento.style.background = 'rgba(239, 68, 68, 0.35)';
     elemento.style.borderColor = '#ef4444';
-    texto.innerHTML = '❌ Resposta Incorreta. A alternativa correta era a letra (' + correta + ').';
+    texto.innerHTML = '❌ Resposta Incorreta. A alternativa correta era a letra (' + correta + '). O algoritmo adaptará sua trilha.';
   }
 }
+
 
 function voltar(){
   if(path.length===0) return;
