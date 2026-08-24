@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Questionador — Mapa de Trilhas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#05060b;
+    --glass:rgba(255,255,255,.045);
+    --glass-border:rgba(255,255,255,.10);
+    --text-primary:#eef0f5;
+    --text-secondary:#8b93a7;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, #12162a 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 80% 100%, #10141f 0%, transparent 55%),
+      var(--bg-void);
+    color:var(--text-primary);
+    font-family:'Inter',sans-serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;}
+  #app{position:relative;width:100vw;height:100vh;z-index:1;}
+
+  #topbar{
+    position:absolute;top:0;left:0;right:0;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px clamp(16px,4vw,40px);
+    z-index:20;pointer-events:none;
+  }
+  #topbar *{pointer-events:auto;}
+  #brand{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;color:var(--text-secondary);}
+  #brand b{color:var(--text-primary);font-weight:700;}
+
+  #trail{display:flex;flex-wrap:wrap;align-items:center;gap:0;font-family:'Space Grotesk',sans-serif;font-size:13px;max-width:60vw;justify-content:flex-end;}
+  .trail-node{display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--text-secondary);transition:color .2s;white-space:nowrap;}
+  .trail-node:hover{color:var(--text-primary);}
+  .trail-node .dot{width:8px;height:8px;border-radius:50%;background:var(--dot,#555);box-shadow:0 0 10px var(--dot,#555);flex:none;}
+  .trail-node.current{color:var(--text-primary);font-weight:600;}
+  .trail-line{width:20px;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.35),rgba(255,255,255,.05));margin:0 6px;flex:none;}
+
+  #backBtn{
+    position:absolute;left:clamp(16px,4vw,40px);bottom:26px;
+    display:none;align-items:center;gap:8px;padding:10px 16px;border-radius:100px;
+    background:var(--glass);border:1px solid var(--glass-border);color:var(--text-secondary);
+    font-family:'Inter';font-size:13px;font-weight:500;cursor:pointer;backdrop-filter:blur(12px);
+    z-index:20;transition:.2s;
+  }
+  #backBtn:hover{color:var(--text-primary);border-color:rgba(255,255,255,.25);}
+  #backBtn svg{width:14px;height:14px;}
+
+  #stage{position:absolute;inset:0;overflow:hidden;}
+
+  .bubble{
+    position:absolute;left:0;top:0;
+    border-radius:50%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    cursor:pointer;
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    backdrop-filter:blur(6px);
+    will-change:transform;
+    opacity:1;
+    transition:opacity .35s ease, border-color .2s, background .2s, box-shadow .15s;
+  }
+  .bubble:hover{background:rgba(255,255,255,.09);border-color:var(--bc);box-shadow:0 0 44px -6px var(--bc);}
+  .bubble.leaving{opacity:0;}
+  .bubble.bounce-flash{box-shadow:0 0 50px 6px var(--bc);}
+  .bubble .icon{font-size:var(--icon-size,24px);filter:drop-shadow(0 0 8px var(--bc));}
+  .bubble .label{font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--text-primary);text-align:center;padding:0 12%;line-height:1.15;}
+
+  #portal{
+    position:fixed;border-radius:50%;pointer-events:none;z-index:15;
+    background:var(--pc,#fff);opacity:0;transform-origin:center;
+  }
+  #portal.playing{
+    transition:width .55s cubic-bezier(.6,0,.15,1), height .55s cubic-bezier(.6,0,.15,1),
+                top .55s cubic-bezier(.6,0,.15,1), left .55s cubic-bezier(.6,0,.15,1),
+                opacity .35s ease;
+  }
+
+  #leafCard{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.85);
+    width:min(420px,86vw);padding:34px 30px;border-radius:22px;
+    background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    border:1px solid var(--glass-border);backdrop-filter:blur(14px);text-align:center;
+    opacity:0;animation:leafIn .5s cubic-bezier(.2,.9,.3,1.2) forwards;
+    box-shadow:0 0 60px -10px var(--bc);
+  }
+  @keyframes leafIn{to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
+  #leafCard .icon{font-size:34px;filter:drop-shadow(0 0 12px var(--bc));margin-bottom:14px;}
+  #leafCard h2{font-family:'Space Grotesk';font-size:21px;margin:0 0 8px;}
+  #leafCard p{color:var(--text-secondary);font-size:14px;line-height:1.6;margin:0 0 26px;}
+  #leafCard button{
+    font-family:'Space Grotesk';font-weight:600;font-size:14px;padding:13px 26px;border-radius:100px;
+    border:none;cursor:pointer;background:var(--bc);color:#08090d;transition:filter .2s, transform .2s;
+  }
+  #leafCard button:hover{filter:brightness(1.1);transform:translateY(-1px);}
+
+  @media (prefers-reduced-motion: reduce){
+    .bubble,#portal,#leafCard{transition:none !important;animation:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<div id="app">
+  <div id="topbar">
+    <div id="brand"><b>O Questionador</b> · mapa de trilhas</div>
+    <div id="trail"></div>
+  </div>
+
+  <div id="stage"></div>
+
+  <div id="backBtn" onclick="voltar()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    Voltar
+  </div>
+
+  <div id="portal"></div>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   DADOS — árvore de trilhas (matéria > subtema > tópico)
+   Substitua pelo conteúdo real vindo da sua tabela Questao.
+--------------------------------------------------------- */
+const DATA = [
+  { id:'matematica', nome:'Matemática', icone:'🔢', cor:'#f5b95c',
+    filhos:[
+      { id:'algebra', nome:'Álgebra', icone:'➗', filhos:[
+        { id:'eq1', nome:'Equações do 1º grau', icone:'📏' },
+        { id:'eq2', nome:'Equações do 2º grau', icone:'📐' },
+      ]},
+      { id:'geometria', nome:'Geometria', icone:'📐', filhos:[
+        { id:'area', nome:'Área e Perímetro', icone:'▦' },
+        { id:'pitagoras', nome:'Teorema de Pitágoras', icone:'🔺' },
+      ]},
+      { id:'calculo-num', nome:'Cálculo Numérico', icone:'∫', filhos:[
+        { id:'interpolacao', nome:'Interpolação', icone:'📈' },
+        { id:'raizes', nome:'Métodos de Raízes', icone:'🎯' },
+      ]},
+    ]},
+  { id:'historia', nome:'História', icone:'📜', cor:'#e0785a',
+    filhos:[
+      { id:'hist-brasil', nome:'História do Brasil', icone:'🇧🇷', filhos:[
+        { id:'colonial', nome:'Período Colonial', icone:'⛵' },
+        { id:'vargas', nome:'Era Vargas', icone:'🏛️' },
+      ]},
+      { id:'hist-geral', nome:'História Geral', icone:'🏺', filhos:[
+        { id:'rev-francesa', nome:'Revolução Francesa', icone:'⚜️' },
+        { id:'guerra-fria', nome:'Guerra Fria', icone:'☢️' },
+      ]},
+    ]},
+  { id:'portugues', nome:'Português', icone:'📚', cor:'#b48cf2',
+    filhos:[
+      { id:'gramatica-pt', nome:'Gramática', icone:'✏️', filhos:[
+        { id:'classes', nome:'Classes de Palavras', icone:'🔤' },
+        { id:'concordancia', nome:'Concordância Verbal', icone:'🔗' },
+      ]},
+      { id:'literatura', nome:'Literatura', icone:'🖋️', filhos:[
+        { id:'modernismo', nome:'Modernismo', icone:'🎭' },
+        { id:'realismo', nome:'Realismo', icone:'🕰️' },
+      ]},
+    ]},
+  { id:'geografia', nome:'Geografia', icone:'🌍', cor:'#3ddc9b',
+    filhos:[
+      { id:'geo-fisica', nome:'Geografia Física', icone:'🗺️' },
+      { id:'geopolitica', nome:'Geopolítica', icone:'🏳️', filhos:[
+        { id:'globalizacao', nome:'Globalização', icone:'🔗' },
+        { id:'blocos', nome:'Blocos Econômicos', icone:'🤝' },
+      ]},
+    ]},
+  { id:'ciencias', nome:'Ciências', icone:'🔬', cor:'#4fb4f0',
+    filhos:[
+      { id:'biologia', nome:'Biologia', icone:'🧬', filhos:[
+        { id:'celula', nome:'Célula', icone:'🦠' },
+        { id:'genetica', nome:'Genética', icone:'🧬' },
+      ]},
+      { id:'quimica', nome:'Química', icone:'⚗️', filhos:[
+        { id:'tabela', nome:'Tabela Periódica', icone:'🧪' },
+        { id:'reacoes', nome:'Reações Químicas', icone:'💥' },
+      ]},
+      { id:'fisica', nome:'Física', icone:'🌡️', filhos:[
+        { id:'mecanica', nome:'Mecânica', icone:'⚙️' },
+        { id:'eletricidade', nome:'Eletricidade', icone:'⚡' },
+      ]},
+    ]},
+  { id:'ingles', nome:'Inglês', icone:'🗣️', cor:'#f26fa0',
+    filhos:[
+      { id:'gram-en', nome:'Gramática', icone:'📘' },
+      { id:'vocab-en', nome:'Vocabulário', icone:'🔤' },
+    ]},
+  { id:'tecnologia', nome:'Tecnologia', icone:'💻', cor:'#8b9cf7',
+    filhos:[
+      { id:'etica', nome:'Ética e Tecnologia', icone:'⚖️', filhos:[
+        { id:'privacidade', nome:'Privacidade de Dados', icone:'🔒', filhos:[
+          { id:'lgpd', nome:'LGPD na prática', icone:'📄' },
+          { id:'anonimizacao', nome:'Anonimização', icone:'🫥' },
+        ]},
+        { id:'vieses', nome:'Vieses Algorítmicos', icone:'🎯', filhos:[
+          { id:'fairness', nome:'Fairness em ML', icone:'⚖️' },
+          { id:'discriminacao', nome:'Discriminação em modelos', icone:'🚫' },
+        ]},
+        { id:'ia-sociedade', nome:'IA e Sociedade', icone:'🌐' },
+      ]},
+      { id:'engenharia', nome:'Engenharia de Software', icone:'⚙️', filhos:[
+        { id:'padroes', nome:'Padrões de Projeto', icone:'🧩', filhos:[
+          { id:'singleton', nome:'Singleton', icone:'🔘' },
+          { id:'observer', nome:'Observer', icone:'👁️' },
+        ]},
+        { id:'arquitetura', nome:'Arquitetura de Sistemas', icone:'🏗️' },
+        { id:'testes', nome:'Testes de Software', icone:'🧪' },
+      ]},
+      { id:'logica', nome:'Lógica de Programação', icone:'🔀', filhos:[
+        { id:'decisao', nome:'Estruturas de Decisão', icone:'🔀' },
+        { id:'lacos', nome:'Laços de Repetição', icone:'🔁' },
+        { id:'recursao', nome:'Recursividade', icone:'🌀', filhos:[
+          { id:'rec-base', nome:'Caso base', icone:'🧱' },
+          { id:'rec-pilha', nome:'Pilha de chamadas', icone:'📚' },
+        ]},
+      ]},
+    ]},
+];
+
+/* ---------------------------------------------------------
+   ESTADO
+--------------------------------------------------------- */
+const stage = document.getElementById('stage');
+const trailEl = document.getElementById('trail');
+const backBtn = document.getElementById('backBtn');
+const portal = document.getElementById('portal');
+
+let path = [];
+let currentList = DATA;
+let currentColor = null;
+let bubbles = [];        // {el,x,y,vx,vy,size,spawn}
+let animId = null;
+
+const TOP_MARGIN = 90, BOTTOM_MARGIN = 90, SIDE_MARGIN = 16;
+
+/* ---------------------------------------------------------
+   RENDER DE UM NÍVEL — bolhas nascem no centro e "explodem"
+   feito estilo logo de DVD, cada uma com sua velocidade fixa
+--------------------------------------------------------- */
+function renderLevel(list){
+  cancelAnimationFrame(animId);
+  stage.innerHTML = '';
+  bubbles = [];
+
+  const w = stage.clientWidth, h = stage.clientHeight;
+  const cx = w/2, cy = h/2;
+
+  list.forEach((node, i)=>{
+    const size = path.length===0 ? 118 : (node.filhos ? 108 : 100);
+    const color = node.cor || currentColor || '#8b93a7';
+
+    const el = document.createElement('div');
+    el.className = 'bubble';
+    el.style.setProperty('--bc', color);
+    el.style.setProperty('--icon-size', path.length===0 ? '28px' : '22px');
+    el.style.width = size+'px'; el.style.height = size+'px';
+    el.innerHTML = `<div class="icon">${node.icone||'●'}</div><div class="label" style="font-size:${path.length===0?'13.5px':'12px'}">${node.nome}</div>`;
+    el.addEventListener('click', (e)=>irPara(node, el));
+    stage.appendChild(el);
+
+    const angle = Math.random()*Math.PI*2;
+    const speed = 1.1 + Math.random()*0.9;
+    bubbles.push({
+      el,
+      x: cx - size/2, y: cy - size/2,
+      vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+      size, spawn: performance.now()
+    });
+  });
+
+  tick();
+}
+
+function tick(){
+  const w = stage.clientWidth, h = stage.clientHeight;
+  const now = performance.now();
+
+  bubbles.forEach(b=>{
+    b.x += b.vx; b.y += b.vy;
+
+    if(b.x <= SIDE_MARGIN){ b.x = SIDE_MARGIN; b.vx = Math.abs(b.vx); flash(b); }
+    if(b.x + b.size >= w - SIDE_MARGIN){ b.x = w - SIDE_MARGIN - b.size; b.vx = -Math.abs(b.vx); flash(b); }
+    if(b.y <= TOP_MARGIN){ b.y = TOP_MARGIN; b.vy = Math.abs(b.vy); flash(b); }
+    if(b.y + b.size >= h - BOTTOM_MARGIN){ b.y = h - BOTTOM_MARGIN - b.size; b.vy = -Math.abs(b.vy); flash(b); }
+
+    const grow = Math.min(1, (now - b.spawn) / 420);
+    const scale = grow<1 ? backEase(grow) : 1;
+    b.el.style.transform = `translate(${b.x}px, ${b.y}px) scale(${scale})`;
+  });
+
+  animId = requestAnimationFrame(tick);
+}
+
+function backEase(t){ // leve "estouro" ao nascer, sem libs
+  const c = 1.6;
+  return 1 + c*Math.pow(t-1,3) + c*Math.pow(t-1,2);
+}
+
+function flash(b){
+  if(b.flashing) return;
+  b.flashing = true;
+  b.el.classList.add('bounce-flash');
+  setTimeout(()=>{ b.el.classList.remove('bounce-flash'); b.flashing=false; }, 260);
+}
+
+/* ---------------------------------------------------------
+   TRANSIÇÃO "ZOOM NA BOLHA"
+--------------------------------------------------------- */
+function irPara(node, bubbleEl){
+  cancelAnimationFrame(animId);
+  const rect = bubbleEl.getBoundingClientRect();
+  const color = getComputedStyle(bubbleEl).getPropertyValue('--bc') || node.cor;
+
+  bubbles.forEach(b=> b.el.classList.add('leaving'));
+
+  portal.style.setProperty('--pc', node.cor || color);
+  portal.style.width = rect.width+'px';
+  portal.style.height = rect.height+'px';
+  portal.style.left = rect.left+'px';
+  portal.style.top = rect.top+'px';
+  portal.style.opacity = '.9';
+  portal.style.borderRadius = '50%';
+
+  requestAnimationFrame(()=>{
+    portal.classList.add('playing');
+    const diag = Math.hypot(window.innerWidth, window.innerHeight);
+    portal.style.width = diag*1.3+'px';
+    portal.style.height = diag*1.3+'px';
+    portal.style.left = (window.innerWidth/2 - diag*0.65)+'px';
+    portal.style.top = (window.innerHeight/2 - diag*0.65)+'px';
+  });
+
+  setTimeout(()=>{
+    path.push(node);
+    currentColor = node.cor || currentColor;
+    renderTrail();
+    backBtn.style.display = 'flex';
+
+    if(node.filhos && node.filhos.length){
+      currentList = node.filhos;
+      renderLevel(currentList);
+    } else {
+      mostrarLeaf(node);
+    }
+
+    setTimeout(()=>{
+      portal.style.opacity = '0';
+      portal.style.width = rect.width+'px';
+      portal.style.height = rect.height+'px';
+      portal.style.left = rect.left+'px';
+      portal.style.top = rect.top+'px';
+      setTimeout(()=>portal.classList.remove('playing'), 400);
+    }, 60);
+  }, 560);
+}
+
+function mostrarLeaf(node){
+  cancelAnimationFrame(animId);
+  stage.innerHTML = '';
+  bubbles = [];
+  const card = document.createElement('div');
+  card.id = 'leafCard';
+  card.style.setProperty('--bc', node.cor || currentColor);
+  card.innerHTML = `
+    <div class="icon">${node.icone||'✦'}</div>
+    <h2>${node.nome}</h2>
+    <p>Trilha selecionada pelo algoritmo com base no seu histórico de desempenho neste tópico.</p>
+    <button onclick="iniciarPerguntas('${node.id}')">Iniciar Perguntas</button>
+  `;
+  stage.appendChild(card);
+}
+
+function iniciarPerguntas(topicoId){
+  /* INTEGRAÇÃO: chame aqui a lógica real do seu script.js,
+     ex.: selecionarTema(topicoId) ou uma rota /api/questoes?tema=topicoId */
+  alert('Iniciando perguntas do tópico: ' + topicoId);
+}
+
+/* ---------------------------------------------------------
+   VOLTAR
+--------------------------------------------------------- */
+function voltar(){
+  if(path.length===0) return;
+  path.pop();
+  currentColor = path.length ? path[path.length-1].cor : null;
+  currentList = path.length ? path[path.length-1].filhos : DATA;
+  renderTrail();
+  if(path.length===0) backBtn.style.display='none';
+  renderLevel(currentList);
+}
+
+/* ---------------------------------------------------------
+   BREADCRUMB — "trilha do algoritmo"
+--------------------------------------------------------- */
+function renderTrail(){
+  trailEl.innerHTML = '';
+  const home = document.createElement('div');
+  home.className = 'trail-node' + (path.length===0 ? ' current' : '');
+  home.innerHTML = `<span class="dot" style="--dot:#8b93a7"></span> Início`;
+  home.onclick = ()=>{ while(path.length) voltar(); };
+  trailEl.appendChild(home);
+
+  path.forEach((node,i)=>{
+    const line = document.createElement('div'); line.className='trail-line';
+    trailEl.appendChild(line);
+    const el = document.createElement('div');
+    el.className = 'trail-node' + (i===path.length-1 ? ' current':'');
+    el.innerHTML = `<span class="dot" style="--dot:${node.cor||'#8b93a7'}"></span> ${node.nome}`;
+    el.onclick = ()=>{ while(path.length>i+1) voltar(); };
+    trailEl.appendChild(el);
+  });
+}
+
+/* ---------------------------------------------------------
+   FUNDO ESTRELADO (leve, ambiente)
+--------------------------------------------------------- */
+(function stars(){
+  const c = document.getElementById('stars');
+  const ctx = c.getContext('2d');
+  function resize(){ c.width=innerWidth; c.height=innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  const pts = Array.from({length:110}, ()=>({
+    x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+    r:Math.random()*1.3+.2, a:Math.random()*Math.PI*2
+  }));
+  function loop(t){
+    ctx.clearRect(0,0,c.width,c.height);
+    pts.forEach(p=>{
+      const tw = .5 + .5*Math.sin(t/1000 + p.a);
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255,255,255,${.15+.35*tw})`;
+      ctx.arc(p.x,p.y,p.r,0,7);
+      ctx.fill();
+    });
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+
+/* ---------------------------------------------------------
+   INIT
+--------------------------------------------------------- */
+renderTrail();
+renderLevel(currentList);
+</script>
+</body>
+</html>
