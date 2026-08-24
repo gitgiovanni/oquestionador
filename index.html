@@ -10,10 +10,10 @@
 <style>
   :root{
     --bg-void:#05060b;
-    --glass:rgba(255,255,255,.045);
-    --glass-border:rgba(255,255,255,.10);
+    --glass:rgba(255,255,255,.06);
+    --glass-border:rgba(255,255,255,.12);
     --text-primary:#eef0f5;
-    --text-secondary:#8b93a7;
+    --text-secondary:#94a3b8;
     --accent: #8b9cf7;
   }
   *{box-sizing:border-box;}
@@ -32,58 +32,55 @@
   #stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;}
   #app{position:relative;width:100vw;height:100vh;z-index:1;}
 
-  /* --- TELA DE LOGIN CENTRALIZADA --- */
-  #loginScreen {
-    position: fixed; /* Força a fixação na tela inteira */
+  /* --- TELA DE AUTENTICAÇÃO (LOGIN / CADASTRO) --- */
+  #authScreen {
+    position: fixed;
     top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100vw; height: 100vh;
     z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(5, 6, 11, 0.7);
-    backdrop-filter: blur(12px);
-    transition: opacity 0.6s ease, visibility 0.6s;
+    background: rgba(5, 6, 11, 0.75);
+    backdrop-filter: blur(14px);
+    transition: opacity 0.5s ease, visibility 0.5s;
   }
   
-  .login-card {
-    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+  .auth-card {
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
     border: 1px solid var(--glass-border);
-    padding: 40px;
+    padding: 35px;
     border-radius: 22px;
     text-align: center;
-    width: min(400px, 90vw);
-    box-shadow: 0 0 60px -10px rgba(139, 156, 247, 0.15);
-    animation: loginIn .6s cubic-bezier(.2,.9,.3,1.2) forwards;
-    margin: 0;
+    width: min(420px, 90vw);
+    box-shadow: 0 0 50px -10px rgba(139, 156, 247, 0.2);
+    animation: fadeIn .5s cubic-bezier(.2,.9,.3,1.2) forwards;
   }
   
-  .login-card h2 {
+  .auth-card h2 {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 24px;
-    margin: 0 0 8px;
-    color: var(--text-primary);
+    font-size: 22px;
+    margin: 0 0 6px;
   }
   
-  .login-card p {
+  .auth-card p {
     color: var(--text-secondary);
-    font-size: 14px;
-    margin: 0 0 30px;
+    font-size: 13.5px;
+    margin: 0 0 24px;
   }
   
   .input-group {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    margin-bottom: 25px;
+    gap: 12px;
+    margin-bottom: 20px;
   }
   
   .input-group input {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--glass-border);
-    padding: 14px 16px;
-    border-radius: 12px;
+    padding: 13px 16px;
+    border-radius: 10px;
     color: var(--text-primary);
     font-family: 'Inter', sans-serif;
     font-size: 14px;
@@ -91,41 +88,53 @@
     transition: border-color 0.2s;
   }
   
-  .input-group input:focus {
-    border-color: var(--accent);
-  }
+  .input-group input:focus { border-color: var(--accent); }
+  .input-group input::placeholder { color: rgba(148, 163, 184, 0.4); }
   
-  .input-group input::placeholder {
-    color: rgba(139, 147, 167, 0.5);
-  }
-  
-  .btn-login {
+  .btn-submit {
     width: 100%;
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
-    font-size: 15px;
-    padding: 14px;
-    border-radius: 12px;
+    font-size: 14.5px;
+    padding: 13px;
+    border-radius: 10px;
     border: none;
     cursor: pointer;
     background: var(--text-primary);
     color: #05060b;
     transition: transform 0.2s, filter 0.2s;
   }
-  
-  .btn-login:hover {
-    transform: translateY(-2px);
-    filter: brightness(0.9);
-  }
+  .btn-submit:hover { transform: translateY(-1px); filter: brightness(0.9); }
 
-  /* --- O RESTO DO CSS --- */
+  .auth-switch {
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .auth-switch span {
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .auth-switch span:hover { text-decoration: underline; }
+
+  /* Feedback moderno (substitui o alert feio) */
+  #authFeedback {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+  }
+  .feedback-erro { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; }
+  .feedback-sucesso { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; }
+
+  /* --- TOPBAR E TRILHAS --- */
   #topbar{
     position:absolute;top:0;left:0;right:0;
     display:flex;align-items:center;justify-content:space-between;
     padding:22px clamp(16px,4vw,40px);
-    z-index:20;pointer-events:none;
-    opacity: 0;
-    transition: opacity 0.8s ease;
+    z-index:20;pointer-events:none;opacity:0;transition:opacity .8s ease;
   }
   #topbar *{pointer-events:auto;}
   #brand{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;color:var(--text-secondary);}
@@ -151,20 +160,15 @@
   #stage{position:absolute;inset:0;overflow:hidden;}
 
   .bubble{
-    position:absolute;left:0;top:0;
-    border-radius:50%;
+    position:absolute;left:0;top:0;border-radius:50%;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-    cursor:pointer;
-    background:var(--glass);
-    border:1px solid var(--glass-border);
-    backdrop-filter:blur(6px);
-    will-change:transform;
-    opacity:1;
+    cursor:pointer;background:var(--glass);border:1px solid var(--glass-border);
+    backdrop-filter:blur(8px);will-change:transform;opacity:1;
     transition:opacity .35s ease, border-color .2s, background .2s, box-shadow .15s;
   }
-  .bubble:hover{background:rgba(255,255,255,.09);border-color:var(--bc);box-shadow:0 0 44px -6px var(--bc);}
+  .bubble:hover{background:rgba(255,255,255,.12);border-color:var(--bc);box-shadow:0 0 40px -6px var(--bc);}
   .bubble.leaving{opacity:0;}
-  .bubble.bounce-flash{box-shadow:0 0 50px 6px var(--bc);}
+  .bubble.bounce-flash{box-shadow:0 0 40px 4px var(--bc);}
   .bubble .icon{font-size:var(--icon-size,24px);filter:drop-shadow(0 0 8px var(--bc));}
   .bubble .label{font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--text-primary);text-align:center;padding:0 12%;line-height:1.15;}
 
@@ -174,36 +178,65 @@
   }
   #portal.playing{
     transition:width .55s cubic-bezier(.6,0,.15,1), height .55s cubic-bezier(.6,0,.15,1),
-                top .55s cubic-bezier(.6,0,.15,1), left .55s cubic-bezier(.6,0,.15,1),
-                opacity .35s ease;
+                top .55s cubic-bezier(.6,0,.15,1), left .55s cubic-bezier(.6,0,.15,1), opacity .35s ease;
   }
 
+  /* --- CARD DE TRILHA / QUIZ (ALTO CONTRASTE E LEGIBILIDADE) --- */
   #leafCard{
-    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.85);
-    width:min(420px,86vw);padding:34px 30px;border-radius:22px;
-    background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
-    border:1px solid var(--glass-border);backdrop-filter:blur(14px);text-align:center;
-    opacity:0;animation:leafIn .5s cubic-bezier(.2,.9,.3,1.2) forwards;
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);
+    width:min(520px, 90vw);padding:32px;border-radius:22px;
+    background:rgba(15, 23, 42, 0.85);
+    border:1px solid var(--glass-border);backdrop-filter:blur(16px);
+    opacity:0;animation:fadeIn .4s cubic-bezier(.2,.9,.3,1.2) forwards;
     box-shadow:0 0 60px -10px var(--bc);
+    text-align: left;
   }
-  @keyframes loginIn{
-    from{opacity:0;transform:scale(.92) translateY(10px);}
-    to{opacity:1;transform:scale(1) translateY(0);}
+  @keyframes fadeIn{to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
+  
+  .quiz-alternativa {
+    width: 100%;
+    padding: 14px 18px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff !important; /* Força alta visibilidade */
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .quiz-alternativa:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--accent);
   }
 
-  @keyframes leafIn{to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
-  #leafCard .icon{font-size:34px;filter:drop-shadow(0 0 12px var(--bc));margin-bottom:14px;}
-  #leafCard h2{font-family:'Space Grotesk';font-size:21px;margin:0 0 8px;}
-  #leafCard p{color:var(--text-secondary);font-size:14px;line-height:1.6;margin:0 0 26px;}
-  #leafCard button{
-    font-family:'Space Grotesk';font-weight:600;font-size:14px;padding:13px 26px;border-radius:100px;
-    border:none;cursor:pointer;background:var(--bc);color:#08090d;transition:filter .2s, transform .2s;
+  /* Botão de Transparência Algorítmica */
+  .btn-transparencia {
+    background: rgba(139, 156, 247, 0.15);
+    border: 1px solid rgba(139, 156, 247, 0.3);
+    color: var(--accent);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: 0.2s;
   }
-  #leafCard button:hover{filter:brightness(1.1);transform:translateY(-1px);}
+  .btn-transparencia:hover { background: rgba(139, 156, 247, 0.25); }
 
-  @media (prefers-reduced-motion: reduce){
-    .bubble,#portal,#leafCard{transition:none !important;animation:none !important;}
+  .transparencia-box {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(139, 156, 247, 0.1);
+    border-left: 3px solid var(--accent);
+    font-size: 12.5px;
+    color: #cbd5e1;
+    line-height: 1.5;
   }
+
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
@@ -212,19 +245,25 @@
 
 <div id="app">
   
-  <!-- TELA DE LOGIN CENTRALIZADA -->
-  <div id="loginScreen">
-    <div class="login-card">
-      <div class="icon" style="font-size: 34px; margin-bottom: 15px;">🎓</div>
-      <h2>O Questionador</h2>
-      <p>Acesse a plataforma de Algoritmo Transparente</p>
+  <!-- TELA DE LOGIN / CADASTRO -->
+  <div id="authScreen">
+    <div class="auth-card">
+      <div style="font-size: 32px; margin-bottom: 12px;">🎓</div>
+      <h2 id="authTitle">O Questionador</h2>
+      <p id="authSubtitle">Acesse a plataforma de Algoritmo Transparente</p>
       
+      <div id="authFeedback"></div>
+
       <div class="input-group">
-        <input type="email" id="emailInput" placeholder="aluno@instituicao.edu.br" autocomplete="off">
-        <input type="password" id="senhaInput" placeholder="••••••••" autocomplete="off">
+        <input type="email" id="emailInput" placeholder="E-mail acadêmico (ex: aluno@instituicao.edu.br)" autocomplete="off">
+        <input type="password" id="senhaInput" placeholder="Sua senha secreta" autocomplete="off">
       </div>
       
-      <button class="btn-login" onclick="efetuarLogin()">Acessar Trilhas</button>
+      <button class="btn-submit" id="authBtn" onclick="executarAcaoAuth()">Acessar Trilhas</button>
+      
+      <div class="auth-switch">
+        <span id="switchText" onclick="alternarModoAuth()">Não tem uma conta? Cadastre-se</span>
+      </div>
     </div>
   </div>
 
@@ -245,7 +284,7 @@
 
 <script>
 /* ---------------------------------------------------------
-   DADOS E ESTADO DA ÁRVORE 
+   DADOS DA ÁRVORE DE TRILHAS
 --------------------------------------------------------- */
 const DATA = [
   { id:'matematica', nome:'Matemática', icone:'🔢', cor:'#f5b95c',
@@ -294,7 +333,7 @@ const stage = document.getElementById('stage');
 const trailEl = document.getElementById('trail');
 const backBtn = document.getElementById('backBtn');
 const portal = document.getElementById('portal');
-const loginScreen = document.getElementById('loginScreen');
+const authScreen = document.getElementById('authScreen');
 const topbar = document.getElementById('topbar');
 
 let path = [];
@@ -302,23 +341,54 @@ let currentList = DATA;
 let currentColor = null;
 let bubbles = [];        
 let animId = null;
+let modoCadastro = false;
 
 const TOP_MARGIN = 90, BOTTOM_MARGIN = 90, SIDE_MARGIN = 16;
 
 /* ---------------------------------------------------------
-   LÓGICA DE LOGIN
+   SISTEMA DE AUTENTICAÇÃO (LOGIN / CADASTRO)
 --------------------------------------------------------- */
-async function efetuarLogin() {
-  const email = document.getElementById('emailInput').value;
-  const senha = document.getElementById('senhaInput').value;
+function alternarModoAuth() {
+  modoCadastro = !modoCadastro;
+  const title = document.getElementById('authTitle');
+  const subtitle = document.getElementById('authSubtitle');
+  const btn = document.getElementById('authBtn');
+  const switchText = document.getElementById('switchText');
+  document.getElementById('authFeedback').style.display = 'none';
+
+  if(modoCadastro) {
+    title.innerText = "Criar Nova Conta";
+    subtitle.innerText = "Cadastre-se para registrar seu histórico de aprendizado";
+    btn.innerText = "Cadastrar e Entrar";
+    switchText.innerText = "Já tem uma conta? Faça login";
+  } else {
+    title.innerText = "O Questionador";
+    subtitle.innerText = "Acesse a plataforma de Algoritmo Transparente";
+    btn.innerText = "Acessar Trilhas";
+    switchText.innerText = "Não tem uma conta? Cadastre-se";
+  }
+}
+
+function mostrarFeedback(msg, tipo) {
+  const fb = document.getElementById('authFeedback');
+  fb.innerText = msg;
+  fb.className = tipo === 'erro' ? 'feedback-erro' : 'feedback-sucesso';
+  fb.style.display = 'block';
+}
+
+async function executarAcaoAuth() {
+  const email = document.getElementById('emailInput').value.trim();
+  const senha = document.getElementById('senhaInput').value.trim();
 
   if(!email || !senha) {
-    alert("Por favor, preencha todos os campos!");
+    mostrarFeedback("Por favor, preencha todos os campos.", "erro");
     return;
   }
 
+  const endpoint = modoCadastro ? 'http://localhost:3000/api/cadastro' : 'http://localhost:3000/api/login';
+
   try {
-    const resposta = await fetch('http://localhost:3000/api/login', {
+    const resposta = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, senha })
@@ -327,26 +397,25 @@ async function efetuarLogin() {
     const dados = await resposta.json();
 
     if (dados.success) {
-      // Salva o ID do usuário logado na sessão do navegador
       localStorage.setItem('id_usuario', dados.id_usuario);
       
-      loginScreen.style.opacity = '0';
-      loginScreen.style.visibility = 'hidden';
+      authScreen.style.opacity = '0';
+      authScreen.style.visibility = 'hidden';
       topbar.style.opacity = '1';
 
       renderTrail();
       renderLevel(currentList);
     } else {
-      alert("E-mail ou senha incorretos!");
+      mostrarFeedback(dados.message || "Erro na autenticação.", "erro");
     }
   } catch (error) {
-    console.error("Erro ao conectar com o servidor:", error);
-    alert("Não foi possível conectar ao servidor backend (Node.js está rodando?).");
+    console.error("Erro:", error);
+    mostrarFeedback("Servidor Node.js offline ou indisponível.", "erro");
   }
 }
 
 /* ---------------------------------------------------------
-   RENDER DE UM NÍVEL E TRANSIÇÕES 
+   FÍSICA DAS BOLHAS (COM DETECÇÃO DE COLISÃO ENTRE ELAS)
 --------------------------------------------------------- */
 function renderLevel(list){
   cancelAnimationFrame(animId);
@@ -356,7 +425,7 @@ function renderLevel(list){
   const w = stage.clientWidth, h = stage.clientHeight;
   const cx = w/2, cy = h/2;
 
-  list.forEach((node, i)=>{
+  list.forEach((node)=>{
     const size = path.length===0 ? 118 : (node.filhos ? 108 : 100);
     const color = node.cor || currentColor || '#8b93a7';
 
@@ -366,17 +435,18 @@ function renderLevel(list){
     el.style.setProperty('--icon-size', path.length===0 ? '28px' : '22px');
     el.style.width = size+'px'; el.style.height = size+'px';
     el.innerHTML = `<div class="icon">${node.icone||'●'}</div><div class="label" style="font-size:${path.length===0?'13.5px':'12px'}">${node.nome}</div>`;
-    el.addEventListener('click', (e)=>irPara(node, el));
+    el.addEventListener('click', ()=>irPara(node, el));
     stage.appendChild(el);
 
     const angle = Math.random()*Math.PI*2;
-    // Movimento bem mais suave e lento: aproximadamente 15–27 px/s.
     const speed = 0.5 + Math.random()*0.15;
     bubbles.push({
       el,
-      x: cx - size/2, y: cy - size/2,
-      vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
-      size, spawn: performance.now()
+      x: cx + (Math.random()*100 - 50), 
+      y: cy + (Math.random()*100 - 50),
+      vx: Math.cos(angle)*speed, 
+      vy: Math.sin(angle)*speed,
+      size, radius: size/2, spawn: performance.now()
     });
   });
 
@@ -387,6 +457,7 @@ function tick(){
   const w = stage.clientWidth, h = stage.clientHeight;
   const now = performance.now();
 
+  // 1. Atualiza posições e verifica colisões com as paredes
   bubbles.forEach(b=>{
     b.x += b.vx; b.y += b.vy;
 
@@ -394,7 +465,45 @@ function tick(){
     if(b.x + b.size >= w - SIDE_MARGIN){ b.x = w - SIDE_MARGIN - b.size; b.vx = -Math.abs(b.vx); flash(b); }
     if(b.y <= TOP_MARGIN){ b.y = TOP_MARGIN; b.vy = Math.abs(b.vy); flash(b); }
     if(b.y + b.size >= h - BOTTOM_MARGIN){ b.y = h - BOTTOM_MARGIN - b.size; b.vy = -Math.abs(b.vy); flash(b); }
+  });
 
+  // 2. Verifica colisão entre as bolhas (Física elástica simples / Repulsão)
+  for(let i = 0; i < bubbles.length; i++) {
+    for(let j = i + 1; j < bubbles.length; j++) {
+      const b1 = bubbles[i];
+      const b2 = bubbles[j];
+
+      const c1x = b1.x + b1.radius;
+      const c1y = b1.y + b1.radius;
+      const c2x = b2.x + b2.radius;
+      const c2y = b2.y + b2.radius;
+
+      const dx = c2x - c1x;
+      const dy = c2y - c1y;
+      const distancia = Math.hypot(dx, dy);
+      const somaRaios = b1.radius + b2.radius;
+
+      if(distancia < somaRaios) {
+        // Sobreposição detectada: inverte velocidades para afastá-las
+        const tempVx = b1.vx;
+        const tempVy = b1.vy;
+        b1.vx = b2.vx;
+        b1.vy = b2.vy;
+        b2.vx = tempVx;
+        b2.vy = tempVy;
+
+        // Corrige o posicionamento imediato para evitar "grudamento"
+        const overlap = somaRaios - distancia;
+        const ajusteX = (dx / distancia) * (overlap / 2);
+        const ajusteY = (dy / distancia) * (overlap / 2);
+        b1.x -= ajusteX; b1.y -= ajusteY;
+        b2.x += ajusteX; b2.y += ajusteY;
+      }
+    }
+  }
+
+  // 3. Aplica transformações visuais
+  bubbles.forEach(b=>{
     const grow = Math.min(1, (now - b.spawn) / 420);
     const scale = grow<1 ? backEase(grow) : 1;
     b.el.style.transform = `translate(${b.x}px, ${b.y}px) scale(${scale})`;
@@ -403,7 +512,7 @@ function tick(){
   animId = requestAnimationFrame(tick);
 }
 
-function backEase(t){ 
+function backEase(t){  
   const c = 1.6;
   return 1 + c*Math.pow(t-1,3) + c*Math.pow(t-1,2);
 }
@@ -415,6 +524,9 @@ function flash(b){
   setTimeout(()=>{ b.el.classList.remove('bounce-flash'); b.flashing=false; }, 260);
 }
 
+/* ---------------------------------------------------------
+   TRANSIÇÕES E ZOOM NAS BOLHAS
+--------------------------------------------------------- */
 function irPara(node, bubbleEl){
   cancelAnimationFrame(animId);
   const rect = bubbleEl.getBoundingClientRect();
@@ -471,65 +583,93 @@ function mostrarLeaf(node){
   card.id = 'leafCard';
   card.style.setProperty('--bc', node.cor || currentColor);
   card.innerHTML = `
-    <div class="icon">${node.icone||'✦'}</div>
-    <h2>${node.nome}</h2>
-    <p>Trilha selecionada pelo algoritmo com base no seu histórico de desempenho neste tópico.</p>
-    <button onclick="iniciarPerguntas('${node.id}')">Iniciar Perguntas</button>
+    <div style="font-size:28px; margin-bottom:12px;">${node.icone||'✦'}</div>
+    <h2 style="font-family:'Space Grotesk'; font-size:20px; margin:0 0 8px;">${node.nome}</h2>
+    <p style="color:var(--text-secondary); font-size:13.5px; line-height:1.5; margin:0 0 24px;">Trilha mapeada com base no seu perfil de aprendizado acadêmico.</p>
+    <button onclick="iniciarPerguntas('${node.id}')" style="font-family:'Space Grotesk'; font-weight:600; font-size:14px; padding:12px 24px; border-radius:100px; border:none; cursor:pointer; background:var(--bc); color:#08090d; width:100%;">Iniciar Questão do Tópico</button>
   `;
   stage.appendChild(card);
 }
 
+/* ---------------------------------------------------------
+   INTEGRAÇÃO COM O BACK-END (BUSCA DE QUESTÕES E EXIBIÇÃO)
+--------------------------------------------------------- */
 async function iniciarPerguntas(topicoId){
   try {
     const resposta = await fetch(`http://localhost:3000/api/questoes/${topicoId}`);
     const questoes = await resposta.json();
 
     if (questoes.length === 0) {
-      alert("Ainda não há questões cadastradas para este tópico no banco de dados.");
+      stage.innerHTML = `
+        <div id="leafCard">
+          <h3 style="color:var(--accent); margin-top:0;">Tópico: ${topicoId.toUpperCase()}</h3>
+          <p style="color:var(--text-secondary);">Ainda não há questões cadastradas neste tópico no banco MySQL.</p>
+          <button onclick="voltar()" class="quiz-alternativa" style="margin-top:15px; text-align:center;">Voltar ao Mapa</button>
+        </div>
+      `;
       return;
     }
 
-    // Pega a primeira questão do tópico para exibir
     const q = questoes[0];
     
-    // Substitui o card de trilha por uma interface simples de Quiz
     stage.innerHTML = `
-      <div id="leafCard" style="width:min(600px, 90vw); text-align:left;">
-        <h3 style="margin-bottom:15px; color:var(--accent);">Questão sobre: ${topicoId.toUpperCase()}</h3>
-        <p style="font-size:16px; margin-bottom:20px; color:#fff;">${q.enunciado}</p>
-        
-        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
-          <button class="btn-alt" onclick="validarResposta('${q.alternativa_correta}', 'A', this)">A) ${q.alternativa_a}</button>
-          <button class="btn-alt" onclick="validarResposta('${q.alternativa_correta}', 'B', this)">B) ${q.alternativa_b}</button>
-          <button class="btn-alt" onclick="validarResposta('${q.alternativa_correta}', 'C', this)">C) ${q.alternativa_c}</button>
-          <button class="btn-alt" onclick="validarResposta('${q.alternativa_correta}', 'D', this)">D) ${q.alternativa_d}</button>
+      <div id="leafCard">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+          <span style="font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase;">Trilha: ${topicoId}</span>
+          <!-- O DIFERENCIAL ÉTICO DO TCC -->
+          <button class="btn-transparencia" onclick="toggleTransparencia()">👁️ Por que estou vendo esta pergunta?</button>
         </div>
 
-        <div id="feedbackQuiz" style="display:none; padding:15px; border-radius:10px; background:rgba(0,0,0,0.4); margin-top:15px;">
-          <p id="textoFeedback" style="margin:0 0 10px; font-weight:bold;"></p>
-          <p style="margin:0; font-size:13px; color:var(--text-secondary);"><strong>Justificativa:</strong> ${q.justificativa}</p>
+        <div id="boxTransparencia" class="transparencia-box hidden">
+          <strong>Algoritmo Transparente:</strong> O sistema selecionou esta questão de nível ${q.nivel_dificuldade} pois sua última avaliação neste tópico indicou necessidade de reforço conceitual.
+        </div>
+
+        <p style="font-size:15px; font-weight:600; color:#fff; margin: 15px 0 20px;">${q.enunciado}</p>
+        
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
+          <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'A', this)">A) ${q.alternativa_a}</button>
+          <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'B', this)">B) ${q.alternativa_b}</button>
+          <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'C', this)">C) ${q.alternativa_c}</button>
+          <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'D', this)">D) ${q.alternativa_d}</button>
+        </div>
+
+        <div id="feedbackQuiz" style="display:none; padding:14px; border-radius:10px; background:rgba(0,0,0,0.5); margin-top:15px; border:1px solid rgba(255,255,255,0.1);">
+          <p id="textoFeedback" style="margin:0 0 8px; font-weight:bold; font-size:14px;"></p>
+          <p style="margin:0; font-size:13px; color:var(--text-secondary); line-height:1.4;"><strong>Justificativa pedagógica:</strong> ${q.justificativa}</p>
         </div>
       </div>
     `;
   } catch (error) {
     console.error("Erro ao buscar questões:", error);
-    alert("Erro ao carregar questões do servidor.");
+    alert("Erro de comunicação com o servidor Node.js.");
   }
 }
 
+function toggleTransparencia() {
+  const box = document.getElementById('boxTransparencia');
+  box.classList.toggle('hidden');
+}
+
 function validarResposta(correta, escolhida, elemento) {
+  // Desativa todos os botões após responder
+  const botoes = document.querySelectorAll('.quiz-alternativa');
+  botoes.forEach(b => b.style.pointerEvents = 'none');
+
   const feedback = document.getElementById('feedbackQuiz');
   const texto = document.getElementById('textoFeedback');
   
   feedback.style.display = 'block';
   if(escolhida === correta) {
-    elemento.style.background = 'rgba(16, 185, 129, 0.4)';
+    elemento.style.background = 'rgba(16, 185, 129, 0.35)';
+    elemento.style.borderColor = '#10b981';
     texto.innerHTML = '✅ Resposta Correta!';
   } else {
-    elemento.style.background = 'rgba(239, 68, 68, 0.4)';
-    texto.innerHTML = '❌ Resposta Incorreta. A alternativa certa era a (' + correta + ').';
+    elemento.style.background = 'rgba(239, 68, 68, 0.35)';
+    elemento.style.borderColor = '#ef4444';
+    texto.innerHTML = '❌ Resposta Incorreta. A alternativa correta era a letra (' + correta + ').';
   }
 }
+
 function voltar(){
   if(path.length===0) return;
   path.pop();
