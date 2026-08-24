@@ -798,9 +798,18 @@ async function abrirDashboard() {
         ${htmlTemas}
       </div>
 
-      <button onclick="voltar()" class="btn-submit" style="background:var(--text-primary); color:#08090d;">Voltar ao Mapa de Trilhas</button>
+      <button onclick="voltarDoDashboard()" class="btn-submit" style="background:var(--text-primary); color:#08090d;">Voltar ao Mapa de Trilhas</button>
     </div>
   `;
+}
+
+  function voltarDoDashboard() {
+  path = []; // Reseta a trilha
+  currentColor = null;
+  currentList = DATA;
+  renderTrail();
+  backBtn.style.display = 'none';
+  renderLevel(currentList);
 }
 function voltar(){
   if(path.length===0) return;
