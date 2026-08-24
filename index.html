@@ -308,7 +308,7 @@ const TOP_MARGIN = 90, BOTTOM_MARGIN = 90, SIDE_MARGIN = 16;
 /* ---------------------------------------------------------
    LÓGICA DE LOGIN
 --------------------------------------------------------- */
-function efetuarLogin() {
+async function efetuarLogin() {
   const email = document.getElementById('emailInput').value;
   const senha = document.getElementById('senhaInput').value;
 
@@ -317,12 +317,32 @@ function efetuarLogin() {
     return;
   }
 
-  loginScreen.style.opacity = '0';
-  loginScreen.style.visibility = 'hidden';
-  topbar.style.opacity = '1';
+  try {
+    const resposta = await fetch('http://localhost:3000/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha })
+    });
 
-  renderTrail();
-  renderLevel(currentList);
+    const dados = await resposta.json();
+
+    if (dados.success) {
+      // Salva o ID do usuário logado na sessão do navegador
+      localStorage.setItem('id_usuario', dados.id_usuario);
+      
+      loginScreen.style.opacity = '0';
+      loginScreen.style.visibility = 'hidden';
+      topbar.style.opacity = '1';
+
+      renderTrail();
+      renderLevel(currentList);
+    } else {
+      alert("E-mail ou senha incorretos!");
+    }
+  } catch (error) {
+    console.error("Erro ao conectar com o servidor:", error);
+    alert("Não foi possível conectar ao servidor backend (Node.js está rodando?).");
+  }
 }
 
 /* ---------------------------------------------------------
@@ -459,10 +479,57 @@ function mostrarLeaf(node){
   stage.appendChild(card);
 }
 
-function iniciarPerguntas(topicoId){
-  alert('A conexão com o banco de dados será feita aqui para buscar as questões de: ' + topicoId);
+async function iniciarPerguntas(topicoId){
+  try {
+    const resposta = await fetch(`http://localhost:3000/api/questoes/${topicoId}`);
+    const questoes = await resposta.json();
+
+    if (questoes.length === 0) {
+      alert("Ainda não há questões cadastradas para este tópico no banco de dados.");
+      return;
+    }
+
+    // Pega a primeira questão do tópico para exibir
+    const q = questoes[0];
+    
+    // Substitui o card de trilha por uma interface simples de Quiz
+    stage.innerHTML = `
+      <div id="leafCard" style="width:min(600px, 90vw); text-align:left;">
+        <h3 style="margin-bottom:15px; color:var(--accent);">Questão sobre: ${topicoId.toUpperCase()}</h3>
+        <p style="font-size:16px; margin-bottom:20px; color:#fff;">${q.enunciado}</p>
+        
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+          <button class="btn-alt" onclick="validarResposta('${q.alternativa_correta}', 'A', this)">A) ${q.alternativa_a}</button>
+          <button class="btn-alt" onclick="validarResposta('${q.alternativa_correta}', 'B', this)">B) ${q.alternativa_b}</button>
+          <button class="btn-alt" onclick="validarResposta('${q.alternativa_correta}', 'C', this)">C) ${q.alternativa_c}</button>
+          <button class="btn-alt" onclick="validarResposta('${q.alternativa_correta}', 'D', this)">D) ${q.alternativa_d}</button>
+        </div>
+
+        <div id="feedbackQuiz" style="display:none; padding:15px; border-radius:10px; background:rgba(0,0,0,0.4); margin-top:15px;">
+          <p id="textoFeedback" style="margin:0 0 10px; font-weight:bold;"></p>
+          <p style="margin:0; font-size:13px; color:var(--text-secondary);"><strong>Justificativa:</strong> ${q.justificativa}</p>
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    console.error("Erro ao buscar questões:", error);
+    alert("Erro ao carregar questões do servidor.");
+  }
 }
 
+function validarResposta(correta, escolhida, elemento) {
+  const feedback = document.getElementById('feedbackQuiz');
+  const texto = document.getElementById('textoFeedback');
+  
+  feedback.style.display = 'block';
+  if(escolhida === correta) {
+    elemento.style.background = 'rgba(16, 185, 129, 0.4)';
+    texto.innerHTML = '✅ Resposta Correta!';
+  } else {
+    elemento.style.background = 'rgba(239, 68, 68, 0.4)';
+    texto.innerHTML = '❌ Resposta Incorreta. A alternativa certa era a (' + correta + ').';
+  }
+}
 function voltar(){
   if(path.length===0) return;
   path.pop();
