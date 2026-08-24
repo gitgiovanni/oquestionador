@@ -14,6 +14,7 @@
     --glass-border:rgba(255,255,255,.10);
     --text-primary:#eef0f5;
     --text-secondary:#8b93a7;
+    --accent: #8b9cf7;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
@@ -31,11 +32,97 @@
   #stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;}
   #app{position:relative;width:100vw;height:100vh;z-index:1;}
 
+  /* --- TELA DE LOGIN (NOVO) --- */
+  #loginScreen {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 6, 11, 0.6);
+    backdrop-filter: blur(12px);
+    transition: opacity 0.6s ease, visibility 0.6s;
+  }
+  
+  .login-card {
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    border: 1px solid var(--glass-border);
+    padding: 40px;
+    border-radius: 22px;
+    text-align: center;
+    width: min(400px, 90vw);
+    box-shadow: 0 0 60px -10px rgba(139, 156, 247, 0.15);
+    animation: leafIn .6s cubic-bezier(.2,.9,.3,1.2) forwards;
+  }
+  
+  .login-card h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 24px;
+    margin: 0 0 8px;
+    color: var(--text-primary);
+  }
+  
+  .login-card p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0 0 30px;
+  }
+  
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+  
+  .input-group input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    padding: 14px 16px;
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  
+  .input-group input:focus {
+    border-color: var(--accent);
+  }
+  
+  .input-group input::placeholder {
+    color: rgba(139, 147, 167, 0.5);
+  }
+  
+  .btn-login {
+    width: 100%;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    background: var(--text-primary);
+    color: #05060b;
+    transition: transform 0.2s, filter 0.2s;
+  }
+  
+  .btn-login:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.9);
+  }
+
+  /* --- O RESTO DO CSS ORIGINAL --- */
   #topbar{
     position:absolute;top:0;left:0;right:0;
     display:flex;align-items:center;justify-content:space-between;
     padding:22px clamp(16px,4vw,40px);
     z-index:20;pointer-events:none;
+    opacity: 0; /* Começa invisível até o login */
+    transition: opacity 0.8s ease;
   }
   #topbar *{pointer-events:auto;}
   #brand{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;color:var(--text-secondary);}
@@ -116,6 +203,23 @@
 <canvas id="stars"></canvas>
 
 <div id="app">
+  
+  <!-- TELA DE LOGIN (NOVA) -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="icon" style="font-size: 34px; margin-bottom: 15px;">🎓</div>
+      <h2>O Questionador</h2>
+      <p>Acesse a plataforma de Algoritmo Transparente</p>
+      
+      <div class="input-group">
+        <input type="email" id="emailInput" placeholder="aluno@instituicao.edu.br" autocomplete="off">
+        <input type="password" id="senhaInput" placeholder="••••••••" autocomplete="off">
+      </div>
+      
+      <button class="btn-login" onclick="efetuarLogin()">Acessar Trilhas</button>
+    </div>
+  </div>
+
   <div id="topbar">
     <div id="brand"><b>O Questionador</b> · mapa de trilhas</div>
     <div id="trail"></div>
@@ -133,8 +237,7 @@
 
 <script>
 /* ---------------------------------------------------------
-   DADOS — árvore de trilhas (matéria > subtema > tópico)
-   Substitua pelo conteúdo real vindo da sua tabela Questao.
+   DADOS E ESTADO
 --------------------------------------------------------- */
 const DATA = [
   { id:'matematica', nome:'Matemática', icone:'🔢', cor:'#f5b95c',
@@ -147,60 +250,6 @@ const DATA = [
         { id:'area', nome:'Área e Perímetro', icone:'▦' },
         { id:'pitagoras', nome:'Teorema de Pitágoras', icone:'🔺' },
       ]},
-      { id:'calculo-num', nome:'Cálculo Numérico', icone:'∫', filhos:[
-        { id:'interpolacao', nome:'Interpolação', icone:'📈' },
-        { id:'raizes', nome:'Métodos de Raízes', icone:'🎯' },
-      ]},
-    ]},
-  { id:'historia', nome:'História', icone:'📜', cor:'#e0785a',
-    filhos:[
-      { id:'hist-brasil', nome:'História do Brasil', icone:'🇧🇷', filhos:[
-        { id:'colonial', nome:'Período Colonial', icone:'⛵' },
-        { id:'vargas', nome:'Era Vargas', icone:'🏛️' },
-      ]},
-      { id:'hist-geral', nome:'História Geral', icone:'🏺', filhos:[
-        { id:'rev-francesa', nome:'Revolução Francesa', icone:'⚜️' },
-        { id:'guerra-fria', nome:'Guerra Fria', icone:'☢️' },
-      ]},
-    ]},
-  { id:'portugues', nome:'Português', icone:'📚', cor:'#b48cf2',
-    filhos:[
-      { id:'gramatica-pt', nome:'Gramática', icone:'✏️', filhos:[
-        { id:'classes', nome:'Classes de Palavras', icone:'🔤' },
-        { id:'concordancia', nome:'Concordância Verbal', icone:'🔗' },
-      ]},
-      { id:'literatura', nome:'Literatura', icone:'🖋️', filhos:[
-        { id:'modernismo', nome:'Modernismo', icone:'🎭' },
-        { id:'realismo', nome:'Realismo', icone:'🕰️' },
-      ]},
-    ]},
-  { id:'geografia', nome:'Geografia', icone:'🌍', cor:'#3ddc9b',
-    filhos:[
-      { id:'geo-fisica', nome:'Geografia Física', icone:'🗺️' },
-      { id:'geopolitica', nome:'Geopolítica', icone:'🏳️', filhos:[
-        { id:'globalizacao', nome:'Globalização', icone:'🔗' },
-        { id:'blocos', nome:'Blocos Econômicos', icone:'🤝' },
-      ]},
-    ]},
-  { id:'ciencias', nome:'Ciências', icone:'🔬', cor:'#4fb4f0',
-    filhos:[
-      { id:'biologia', nome:'Biologia', icone:'🧬', filhos:[
-        { id:'celula', nome:'Célula', icone:'🦠' },
-        { id:'genetica', nome:'Genética', icone:'🧬' },
-      ]},
-      { id:'quimica', nome:'Química', icone:'⚗️', filhos:[
-        { id:'tabela', nome:'Tabela Periódica', icone:'🧪' },
-        { id:'reacoes', nome:'Reações Químicas', icone:'💥' },
-      ]},
-      { id:'fisica', nome:'Física', icone:'🌡️', filhos:[
-        { id:'mecanica', nome:'Mecânica', icone:'⚙️' },
-        { id:'eletricidade', nome:'Eletricidade', icone:'⚡' },
-      ]},
-    ]},
-  { id:'ingles', nome:'Inglês', icone:'🗣️', cor:'#f26fa0',
-    filhos:[
-      { id:'gram-en', nome:'Gramática', icone:'📘' },
-      { id:'vocab-en', nome:'Vocabulário', icone:'🔤' },
     ]},
   { id:'tecnologia', nome:'Tecnologia', icone:'💻', cor:'#8b9cf7',
     filhos:[
@@ -211,48 +260,55 @@ const DATA = [
         ]},
         { id:'vieses', nome:'Vieses Algorítmicos', icone:'🎯', filhos:[
           { id:'fairness', nome:'Fairness em ML', icone:'⚖️' },
-          { id:'discriminacao', nome:'Discriminação em modelos', icone:'🚫' },
+          { id:'discriminacao', nome:'Discriminação', icone:'🚫' },
         ]},
-        { id:'ia-sociedade', nome:'IA e Sociedade', icone:'🌐' },
       ]},
       { id:'engenharia', nome:'Engenharia de Software', icone:'⚙️', filhos:[
-        { id:'padroes', nome:'Padrões de Projeto', icone:'🧩', filhos:[
-          { id:'singleton', nome:'Singleton', icone:'🔘' },
-          { id:'observer', nome:'Observer', icone:'👁️' },
-        ]},
+        { id:'padroes', nome:'Padrões de Projeto', icone:'🧩'},
         { id:'arquitetura', nome:'Arquitetura de Sistemas', icone:'🏗️' },
-        { id:'testes', nome:'Testes de Software', icone:'🧪' },
-      ]},
-      { id:'logica', nome:'Lógica de Programação', icone:'🔀', filhos:[
-        { id:'decisao', nome:'Estruturas de Decisão', icone:'🔀' },
-        { id:'lacos', nome:'Laços de Repetição', icone:'🔁' },
-        { id:'recursao', nome:'Recursividade', icone:'🌀', filhos:[
-          { id:'rec-base', nome:'Caso base', icone:'🧱' },
-          { id:'rec-pilha', nome:'Pilha de chamadas', icone:'📚' },
-        ]},
       ]},
     ]},
 ];
 
-/* ---------------------------------------------------------
-   ESTADO
---------------------------------------------------------- */
 const stage = document.getElementById('stage');
 const trailEl = document.getElementById('trail');
 const backBtn = document.getElementById('backBtn');
 const portal = document.getElementById('portal');
+const loginScreen = document.getElementById('loginScreen');
+const topbar = document.getElementById('topbar');
 
 let path = [];
 let currentList = DATA;
 let currentColor = null;
-let bubbles = [];        // {el,x,y,vx,vy,size,spawn}
+let bubbles = [];        
 let animId = null;
 
 const TOP_MARGIN = 90, BOTTOM_MARGIN = 90, SIDE_MARGIN = 16;
 
 /* ---------------------------------------------------------
-   RENDER DE UM NÍVEL — bolhas nascem no centro e "explodem"
-   feito estilo logo de DVD, cada uma com sua velocidade fixa
+   LÓGICA DE LOGIN (NOVO)
+--------------------------------------------------------- */
+function efetuarLogin() {
+  const email = document.getElementById('emailInput').value;
+  const senha = document.getElementById('senhaInput').value;
+
+  if(!email || !senha) {
+    alert("Por favor, preencha todos os campos!");
+    return;
+  }
+
+  // Faz a tela de login sumir e a topbar aparecer suavemente
+  loginScreen.style.opacity = '0';
+  loginScreen.style.visibility = 'hidden';
+  topbar.style.opacity = '1';
+
+  // Inicia o render das bolhas apenas agora!
+  renderTrail();
+  renderLevel(currentList);
+}
+
+/* ---------------------------------------------------------
+   RENDER DE UM NÍVEL E TRANSIÇÕES (MANTIDO)
 --------------------------------------------------------- */
 function renderLevel(list){
   cancelAnimationFrame(animId);
@@ -308,7 +364,7 @@ function tick(){
   animId = requestAnimationFrame(tick);
 }
 
-function backEase(t){ // leve "estouro" ao nascer, sem libs
+function backEase(t){ 
   const c = 1.6;
   return 1 + c*Math.pow(t-1,3) + c*Math.pow(t-1,2);
 }
@@ -320,9 +376,6 @@ function flash(b){
   setTimeout(()=>{ b.el.classList.remove('bounce-flash'); b.flashing=false; }, 260);
 }
 
-/* ---------------------------------------------------------
-   TRANSIÇÃO "ZOOM NA BOLHA"
---------------------------------------------------------- */
 function irPara(node, bubbleEl){
   cancelAnimationFrame(animId);
   const rect = bubbleEl.getBoundingClientRect();
@@ -388,14 +441,9 @@ function mostrarLeaf(node){
 }
 
 function iniciarPerguntas(topicoId){
-  /* INTEGRAÇÃO: chame aqui a lógica real do seu script.js,
-     ex.: selecionarTema(topicoId) ou uma rota /api/questoes?tema=topicoId */
-  alert('Iniciando perguntas do tópico: ' + topicoId);
+  alert('A conexão com o banco de dados será feita aqui para buscar as questões de: ' + topicoId);
 }
 
-/* ---------------------------------------------------------
-   VOLTAR
---------------------------------------------------------- */
 function voltar(){
   if(path.length===0) return;
   path.pop();
@@ -406,9 +454,6 @@ function voltar(){
   renderLevel(currentList);
 }
 
-/* ---------------------------------------------------------
-   BREADCRUMB — "trilha do algoritmo"
---------------------------------------------------------- */
 function renderTrail(){
   trailEl.innerHTML = '';
   const home = document.createElement('div');
@@ -428,9 +473,6 @@ function renderTrail(){
   });
 }
 
-/* ---------------------------------------------------------
-   FUNDO ESTRELADO (leve, ambiente)
---------------------------------------------------------- */
 (function stars(){
   const c = document.getElementById('stars');
   const ctx = c.getContext('2d');
@@ -453,12 +495,6 @@ function renderTrail(){
   }
   requestAnimationFrame(loop);
 })();
-
-/* ---------------------------------------------------------
-   INIT
---------------------------------------------------------- */
-renderTrail();
-renderLevel(currentList);
 </script>
 </body>
 </html>
