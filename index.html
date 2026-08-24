@@ -55,7 +55,8 @@
     text-align: center;
     width: min(400px, 90vw);
     box-shadow: 0 0 60px -10px rgba(139, 156, 247, 0.15);
-    animation: leafIn .6s cubic-bezier(.2,.9,.3,1.2) forwards;
+    animation: loginIn .6s cubic-bezier(.2,.9,.3,1.2) forwards;
+    margin: 0;
   }
   
   .login-card h2 {
@@ -185,6 +186,11 @@
     opacity:0;animation:leafIn .5s cubic-bezier(.2,.9,.3,1.2) forwards;
     box-shadow:0 0 60px -10px var(--bc);
   }
+  @keyframes loginIn{
+    from{opacity:0;transform:scale(.92) translateY(10px);}
+    to{opacity:1;transform:scale(1) translateY(0);}
+  }
+
   @keyframes leafIn{to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
   #leafCard .icon{font-size:34px;filter:drop-shadow(0 0 12px var(--bc));margin-bottom:14px;}
   #leafCard h2{font-family:'Space Grotesk';font-size:21px;margin:0 0 8px;}
@@ -344,7 +350,8 @@ function renderLevel(list){
     stage.appendChild(el);
 
     const angle = Math.random()*Math.PI*2;
-    const speed = 1.1 + Math.random()*0.9;
+    // Movimento bem mais suave e lento: aproximadamente 15–27 px/s.
+    const speed = 0.25 + Math.random()*0.20;
     bubbles.push({
       el,
       x: cx - size/2, y: cy - size/2,
