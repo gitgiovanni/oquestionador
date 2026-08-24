@@ -280,8 +280,12 @@
     </div>
   </div>
 
-  <div id="topbar">
-    <div id="brand"><b>O Questionador</b> · mapa de trilhas</div>
+ <div id="topbar">
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <div id="brand"><b>O Questionador</b> · mapa de trilhas</div>
+      <!-- BOTÃO DE ACESSO AO DASHBOARD -->
+      <button onclick="abrirDashboard()" class="btn-transparencia" style="pointer-events: auto;">📊 Meu Dashboard</button>
+    </div>
     <div id="trail"></div>
   </div>
 
@@ -604,17 +608,16 @@ function mostrarLeaf(node){
   stage.appendChild(card);
 }
 
-/* ---------------------------------------------------------
-   INTEGRAÇÃO COM O BACK-END (BUSCA DE QUESTÕES E EXIBIÇÃO)
---------------------------------------------------------- */
+let listaQuestoes = [];
+let indiceQuestaoAtual = 0;
 let questaoAtualId = null;
 
 async function iniciarPerguntas(topicoId){
   try {
-    const resposta = await fetch(`http://localhost:3000/api/questoes/${topicoId}`);
-    const questoes = await resposta.json();
+    const resposta = await fetch(`http://localhost:3000/api/questoes-lista/${topicoId}`);
+    listaQuestoes = await resposta.json();
 
-    if (questoes.length === 0) {
+    if (listaQuestoes.length === 0) {
       stage.innerHTML = `
         <div id="leafCard">
           <h3 style="color:var(--accent); margin-top:0;">Tópico: ${topicoId.toUpperCase()}</h3>
@@ -625,62 +628,80 @@ async function iniciarPerguntas(topicoId){
       return;
     }
 
-    const q = questoes[0];
-    questaoAtualId = q.id_questao; // Salva o ID real da questão vinda do MySQL
-    
-    stage.innerHTML = `
-      <div id="leafCard">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-          <span style="font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase;">Trilha: ${topicoId}</span>
-          <button class="btn-transparencia" onclick="toggleTransparencia()">👁️ Por que estou vendo esta pergunta?</button>
-        </div>
+    // Embaralha levemente ou mantém em ordem, resetando o índice
+    indiceQuestaoAtual = 0;
+    renderizarQuestaoAtual(topicoId);
 
-        <div id="boxTransparencia" class="transparencia-box hidden">
-          <strong>Algoritmo Transparente:</strong> O sistema selecionou esta questão de nível ${q.nivel_dificuldade} com base no seu histórico de acertos e erros registrados na base de dados.
-        </div>
-
-        <p style="font-size:15px; font-weight:600; color:#fff; margin: 15px 0 20px;">${q.enunciado}</p>
-        
-        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
-          <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'A', this)">A) ${q.alternativa_a}</button>
-          <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'B', this)">B) ${q.alternativa_b}</button>
-          <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'C', this)">C) ${q.alternativa_c}</button>
-          <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'D', this)">D) ${q.alternativa_d}</button>
-        </div>
-
-        <div id="feedbackQuiz" style="display:none; padding:14px; border-radius:10px; background:rgba(0,0,0,0.5); margin-top:15px; border:1px solid rgba(255,255,255,0.1);">
-          <p id="textoFeedback" style="margin:0 0 8px; font-weight:bold; font-size:14px;"></p>
-          <p style="margin:0; font-size:13px; color:var(--text-secondary); line-height:1.4;"><strong>Justificativa pedagógica:</strong> ${q.justificativa}</p>
-        </div>
-      </div>
-    `;
   } catch (error) {
     console.error("Erro ao buscar questões:", error);
     alert("Erro de comunicação com o servidor Node.js.");
   }
 }
 
-async function validarResposta(correta, escolhida, elemento) {
+function renderizarQuestaoAtual(topicoId) {
+  if (indiceQuestaoAtual >= listaQuestoes.length) {
+    // Fim da trilha do tópico! Mostra parabéns e opção de ver o dashboard
+    stage.innerHTML = `
+      <div id="leafCard" style="text-align:center;">
+        <div style="font-size:36px; margin-bottom:12px;">🎉</div>
+        <h3 style="color:var(--accent); margin-top:0;">Trilha Concluída!</h3>
+        <p style="color:var(--text-secondary); margin-bottom:20px;">Você respondeu todas as questões disponíveis neste tópico.</p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <button onclick="abrirDashboard()" class="btn-submit" style="background:var(--accent); color:#fff;">Ver Meu Dashboard</button>
+          <button onclick="voltar()" class="btn-submit" style="background:rgba(255,255,255,0.1); color:#fff;">Voltar ao Mapa</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const q = listaQuestoes[indiceQuestaoAtual];
+  questaoAtualId = q.id_questao;
+
+  stage.innerHTML = `
+    <div id="leafCard">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span style="font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase;">Questão ${indiceQuestaoAtual + 1} de ${listaQuestoes.length}</span>
+        <button class="btn-transparencia" onclick="toggleTransparencia()">👁️ Transparência Algorítmica</button>
+      </div>
+
+      <div id="boxTransparencia" class="transparencia-box hidden">
+        <strong>Algoritmo Transparente:</strong> Questão de nível ${q.nivel_dificuldade} selecionada sequencialmente na sua trilha de aprendizado adaptativo.
+      </div>
+
+      <p style="font-size:15px; font-weight:600; color:#fff; margin: 12px 0 18px;">${q.enunciado}</p>
+      
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
+        <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'A', this, '${topicoId}')">A) ${q.alternativa_a}</button>
+        <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'B', this, '${topicoId}')">B) ${q.alternativa_b}</button>
+        <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'C', this, '${topicoId}')">C) ${q.alternativa_c}</button>
+        <button class="quiz-alternativa" onclick="validarResposta('${q.alternativa_correta}', 'D', this, '${topicoId}')">D) ${q.alternativa_d}</button>
+      </div>
+
+      <div id="feedbackQuiz" style="display:none; padding:12px; border-radius:10px; background:rgba(0,0,0,0.5); margin-top:12px; border:1px solid rgba(255,255,255,0.1);">
+        <p id="textoFeedback" style="margin:0 0 6px; font-weight:bold; font-size:13.5px;"></p>
+        <p style="margin:0; font-size:12.5px; color:var(--text-secondary); line-height:1.4;"><strong>Justificativa:</strong> ${q.justificativa}</p>
+      </div>
+
+      <button id="btnProxima" class="btn-submit hidden" style="margin-top:15px; background:var(--accent); color:#fff;" onclick="proximaQuestao('${topicoId}')">Próxima Questão ➔</button>
+    </div>
+  `;
+}
+
+async function validarResposta(correta, escolhida, elemento, topicoId) {
   const botoes = document.querySelectorAll('.quiz-alternativa');
   botoes.forEach(b => b.style.pointerEvents = 'none');
 
   const acertou = (escolhida === correta);
   const idUsuario = localStorage.getItem('id_usuario');
 
-  // Envia o registro do erro/acerto para o back-end salvar no MySQL
   try {
     await fetch('http://localhost:3000/api/responder', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id_usuario: idUsuario,
-        id_questao: questaoAtualId,
-        acertou: acertou
-      })
+      body: JSON.stringify({ id_usuario: idUsuario, id_questao: questaoAtualId, acertou: acertou })
     });
-  } catch (e) {
-    console.error("Erro ao registrar histórico no banco:", e);
-  }
+  } catch (e) { console.error("Erro ao registrar histórico:", e); }
 
   const feedback = document.getElementById('feedbackQuiz');
   const texto = document.getElementById('textoFeedback');
@@ -689,15 +710,98 @@ async function validarResposta(correta, escolhida, elemento) {
   if(acertou) {
     elemento.style.background = 'rgba(16, 185, 129, 0.35)';
     elemento.style.borderColor = '#10b981';
-    texto.innerHTML = '✅ Resposta Correta! Registrado no seu histórico.';
+    texto.innerHTML = '✅ Resposta Correta!';
   } else {
     elemento.style.background = 'rgba(239, 68, 68, 0.35)';
     elemento.style.borderColor = '#ef4444';
-    texto.innerHTML = '❌ Resposta Incorreta. A alternativa correta era a letra (' + correta + '). O algoritmo adaptará sua trilha.';
+    texto.innerHTML = '❌ Resposta Incorreta. A alternativa certa era a (' + correta + ').';
   }
+
+  // Mostra o botão para avançar para a próxima pergunta
+  document.getElementById('btnProxima').classList.remove('hidden');
 }
 
+function proximaQuestao(topicoId) {
+  indiceQuestaoAtual++;
+  renderizarQuestaoAtual(topicoId);
+}
 
+async function abrirDashboard() {
+  cancelAnimationFrame(animId);
+  stage.innerHTML = '';
+  bubbles = [];
+  backBtn.style.display = 'none'; // Esconde o botão voltar durante o dashboard
+
+  const idUsuario = localStorage.getItem('id_usuario');
+  let geral = { total_acertos: 0, total_erros: 0, total_respondidas: 0 };
+  let temas = [];
+
+  try {
+    const res = await fetch(`http://localhost:3000/api/dashboard/${idUsuario}`);
+    const json = await res.json();
+    if(json && json.geral) {
+      geral = json.geral;
+      temas = json.temas || [];
+    }
+  } catch(e) { console.error("Erro ao buscar dashboard:", e); }
+
+  const taxaAcerto = geral.total_respondidas > 0 ? ((geral.total_acertos / geral.total_respondidas) * 100).toFixed(1) : 0;
+
+  // Monta a lista de desempenho por tema
+  let htmlTemas = temas.length > 0 ? temas.map(t => {
+    const taxaTema = ((t.acertos / t.total) * 100).toFixed(0);
+    return `
+      <div style="margin-bottom: 10px; font-size: 12.5px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:var(--text-secondary);">
+          <span style="text-transform:uppercase; font-weight:600; color:#fff;">${t.topico_id}</span>
+          <span>${t.acertos}/${t.total} (${taxaTema}%)</span>
+        </div>
+        <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
+          <div style="width:${taxaTema}%; height:100%; background:var(--accent);"></div>
+        </div>
+      </div>
+    `;
+  }).join('') : '<p style="color:var(--text-secondary); font-size:13px; text-align:center;">Nenhum histórico registrado ainda. Responda algumas questões!</p>';
+
+  stage.innerHTML = `
+    <div id="leafCard" style="width:min(560px, 90vw); text-align:left; max-height: 85vh; overflow-y: auto;">
+      <h3 style="color:var(--accent); margin-top:0; font-family:'Space Grotesk'; font-size:20px;">📊 Dashboard de Desempenho</h3>
+      <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">Análise algorítmica do seu perfil acadêmico e histórico de respostas.</p>
+      
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:20px;">
+        <div style="background:rgba(255,255,255,0.04); padding:14px; border-radius:12px; text-align:center; border:1px solid var(--glass-border);">
+          <span style="display:block; font-size:20px; font-weight:bold; color:#fff;">${geral.total_respondidas || 0}</span>
+          <span style="font-size:11px; color:var(--text-secondary);">Respondidas</span>
+        </div>
+        <div style="background:rgba(16, 185, 129, 0.1); padding:14px; border-radius:12px; text-align:center; border:1px solid rgba(16, 185, 129, 0.3);">
+          <span style="display:block; font-size:20px; font-weight:bold; color:#10b981;">${geral.total_acertos || 0}</span>
+          <span style="font-size:11px; color:#6ee7b7;">Acertos</span>
+        </div>
+        <div style="background:rgba(239, 68, 68, 0.1); padding:14px; border-radius:12px; text-align:center; border:1px solid rgba(239, 68, 68, 0.3);">
+          <span style="display:block; font-size:20px; font-weight:bold; color:#ef4444;">${geral.total_erros || 0}</span>
+          <span style="font-size:11px; color:#fca5a5;">Erros</span>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.04); padding:16px; border-radius:12px; margin-bottom:20px; border:1px solid var(--glass-border);">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+          <span>Taxa Geral de Aproveitamento</span>
+          <span style="font-weight:bold; color:var(--accent);">${taxaAcerto}%</span>
+        </div>
+        <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+          <div style="width:${taxaAcerto}%; height:100%; background:var(--accent); transition: width 0.5s;"></div>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.04); padding:16px; border-radius:12px; margin-bottom:20px; border:1px solid var(--glass-border);">
+        <h4 style="margin:0 0 12px; font-size:13.5px; color:#fff; font-family:'Space Grotesk';">Desempenho por Tópico</h4>
+        ${htmlTemas}
+      </div>
+
+      <button onclick="voltar()" class="btn-submit" style="background:var(--text-primary); color:#08090d;">Voltar ao Mapa de Trilhas</button>
+    </div>
+  `;
+}
 function voltar(){
   if(path.length===0) return;
   path.pop();
